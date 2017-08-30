@@ -118,7 +118,7 @@ def log_values(writer, itr, tags=None, values=None, dict=None):
 def gradient_summaries(gvs, norm=True, ratio=True, histogram=True):
     """Register gradient summaries.
 
-    Logs the global norm of the gradient, ratios of gradient_norm/variable_norm and
+    Logs the global norm of the gradient, ratios of gradient_norm/uariable_norm and
     histograms of gradients.
 
     :param gvs: list of (gradient, variable) tuples
@@ -131,28 +131,13 @@ def gradient_summaries(gvs, norm=True, ratio=True, histogram=True):
         tf.summary.scalar('grad_norm', grad_norm)
 
     for g, v in gvs:
-        var_name = v.name.replace(':', '_')
+        var_name = v.name.split(':')[-1]
 
         if ratio:
             log_ratio((g, v), '/'.join(('grad_ratio', var_name)))
 
         if histogram:
             tf.summary.histogram('/'.join(('grad_hist', var_name)), g)
-
-
-def check_id_swaps(bboxes, presence, factor=1.):
-    for i in xrange(bboxes.shape[1]):
-        db = abs(bboxes[1:, i] - bboxes[:-1, i])
-        p = presence[1:, i]
-        counts = p.sum(0)[:, np.newaxis] + 1e-8
-        m = db.sum(0) / counts
-        db -= m
-        std = np.sqrt(((db - m) ** 2).sum(0) / counts)
-
-        margin = factor * std
-        errors = np.where(np.greater(np.greater(db, margin).sum(-1).max(-1), 2))[0]
-        if len(errors) > 0:
-            print 'Possible id swaps at frame(s) {} in seq {}'.format(errors + 1, i)
 
 
 def image_series_summary(tag, imgs, max_timesteps=10):
